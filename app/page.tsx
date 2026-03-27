@@ -1,51 +1,179 @@
-import { supabase } from '@/lib/supabase'
+import Link from 'next/link'
+import { getExperts } from '@/lib/api'
 import type { Expert } from '@/lib/types'
+import { isLikelyYouTubeVideoId, resolveYoutubeHref, youtubeThumbnailUrl } from '@/lib/youtube'
 
-function labelChips(category: string | null | undefined, flags: string | null | undefined): string[] {
-  const out: string[] = []
-  const c = category?.trim()
-  if (c) out.push(c)
-  if (flags?.trim()) {
-    for (const part of flags.split(/[,;]/)) {
-      const t = part.trim()
-      if (t && !out.includes(t)) out.push(t)
-    }
-  }
-  return out
-}
+const STATE_DIRECTORIES_META = [
+  {
+    slug: 'alabama',
+    name: 'Alabama',
+    practitionerLabel: '56 verified practitioners',
+    available: true,
+  },
+] as const
 
 export default async function Home() {
-  const { data: experts } = await supabase.from('experts').select('*').order('name')
+  const experts = await getExperts()
 
   return (
-    <main className="min-h-screen p-8 bg-gray-900">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-4xl font-bold mb-2 text-white">Carnivore Experts</h1>
-        <p className="text-gray-400 mb-8">Medical professionals and researchers in metabolic health</p>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {experts?.map((expert: Expert) => (
-            <div key={expert.id} className="bg-gray-800 rounded-lg shadow-lg p-6 hover:bg-gray-750 transition-colors border border-gray-700">
-              <h2 className="text-xl font-bold text-white">{expert.name}</h2>
-              <p className="text-sm text-blue-400 font-medium mb-1">{expert.credentials} - {expert.specialty}</p>
-              
-              <div className="flex flex-wrap gap-1 mb-3">
-                {labelChips(expert.category, expert.flags).map((label, i) => (
-                  <span key={`${expert.id}-${i}`} className="text-xs bg-blue-900 text-blue-300 px-2 py-1 rounded">
-                    {label}
-                  </span>
-                ))}
-              </div>
-              
-              <p className="text-sm text-gray-300 mb-3">{expert.bio_summary}</p>
-              
-              <div className="text-xs text-gray-500">
-                Alignment: {expert.alignment_score}/5 | {expert.is_practicing ? 'Practicing' : 'Educator'}
-              </div>
-            </div>
-          ))}
+    <main className="min-h-screen">
+      {/* Hero */}
+      <section className="bg-slate-900 px-4 pb-16 pt-14 text-white sm:px-6 sm:pb-20 sm:pt-20 lg:px-8">
+        <div className="mx-auto max-w-4xl text-center">
+          <h1 className="text-3xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
+            Find a Carnivore &amp; Metabolic Health Doctor
+          </h1>
+          <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-slate-300 sm:text-xl">
+            The most comprehensive directory of practitioners open to therapeutic carbohydrate restriction,
+            carnivore, and ketogenic medicine in the United States
+          </p>
+          <div className="mt-10 flex flex-col items-stretch justify-center gap-4 sm:flex-row sm:items-center">
+            <Link
+              href="/directory/alabama"
+              className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-6 py-3.5 text-base font-semibold text-white shadow-lg shadow-blue-900/30 transition hover:bg-blue-500"
+            >
+              Find a Doctor in Your State →
+            </Link>
+            <a
+              href="#national-experts"
+              className="inline-flex items-center justify-center rounded-lg border border-slate-600 bg-slate-800/50 px-6 py-3.5 text-base font-semibold text-white backdrop-blur transition hover:border-slate-500 hover:bg-slate-800"
+            >
+              Browse National Experts →
+            </a>
+          </div>
         </div>
+      </section>
+
+      {/* Stats bar */}
+      <div className="border-y border-slate-800 bg-slate-950 px-4 py-4 sm:px-6 lg:px-8">
+        <p className="mx-auto max-w-5xl text-center text-sm font-medium text-slate-400 sm:text-base">
+          <span className="text-slate-200">51 State Directories</span>
+          <span className="mx-2 text-slate-600" aria-hidden="true">
+            ·
+          </span>
+          <span>56+ Alabama Practitioners</span>
+          <span className="mx-2 text-slate-600" aria-hidden="true">
+            ·
+          </span>
+          <span>12 National Experts</span>
+          <span className="mx-2 text-slate-600" aria-hidden="true">
+            ·
+          </span>
+          <span>Growing Daily</span>
+        </p>
       </div>
+
+      {/* Browse by state */}
+      <section className="bg-slate-50 px-4 py-14 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-6xl">
+          <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">Browse by State</h2>
+          <p className="mt-2 max-w-2xl text-slate-600">
+            We publish full state guides where content is ready. Alabama is live; more states are on the way.
+          </p>
+          <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {STATE_DIRECTORIES_META.map((s) => (
+              <article
+                key={s.slug}
+                className={`flex flex-col rounded-xl border bg-white p-6 shadow-sm ${
+                  s.available
+                    ? 'border-slate-200 transition hover:border-blue-200 hover:shadow-md'
+                    : 'border-dashed border-slate-200 opacity-70'
+                }`}
+              >
+                <h3 className="text-2xl font-bold text-slate-900">{s.name}</h3>
+                <p className="mt-2 text-sm text-slate-600">{s.practitionerLabel}</p>
+                {s.available ? (
+                  <Link
+                    href={`/directory/${s.slug}`}
+                    className="mt-6 inline-flex text-sm font-semibold text-blue-600 hover:text-blue-700"
+                  >
+                    View Directory →
+                  </Link>
+                ) : (
+                  <p className="mt-6 text-sm font-medium text-slate-400">Coming soon</p>
+                )}
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* National experts */}
+      <section id="national-experts" className="scroll-mt-24 bg-white px-4 py-14 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-6xl">
+          <header className="mb-10 max-w-3xl">
+            <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">
+              Leading Voices in Carnivore &amp; Metabolic Medicine
+            </h2>
+            <p className="mt-3 text-lg text-slate-600">
+              These doctors and researchers openly discuss carnivore and ketogenic approaches in their work
+            </p>
+          </header>
+
+          {experts.length === 0 ? (
+            <p className="rounded-xl border border-slate-200 bg-slate-50 p-10 text-center text-slate-600">
+              National expert profiles are being curated. Check back soon.
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {experts.map((expert: Expert) => (
+                <NationalExpertCard key={expert.id} expert={expert} />
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Footer CTA */}
+      <section className="border-t border-slate-200 bg-slate-50 px-4 py-12 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-3xl text-center">
+          <p className="text-base leading-relaxed text-slate-700">
+            Is your state not listed yet? We are adding new states weekly. The full 51-state directory is
+            coming soon.
+          </p>
+        </div>
+      </section>
     </main>
+  )
+}
+
+function NationalExpertCard({ expert }: { expert: Expert }) {
+  const yt = expert.youtube_id?.trim() ?? ''
+  const thumb = yt ? youtubeThumbnailUrl(yt) : null
+  const href = resolveYoutubeHref(expert.youtube_id, expert.name)
+
+  return (
+    <article className="flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:border-slate-300 hover:shadow-md">
+      <a href={href} target="_blank" rel="noopener noreferrer" className="relative block aspect-video bg-slate-200">
+        {thumb ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={thumb} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <div className="flex h-full items-center justify-center bg-slate-800 text-sm font-medium text-slate-200">
+            {isLikelyYouTubeVideoId(yt) ? 'YouTube' : 'Watch'}
+          </div>
+        )}
+      </a>
+      <div className="flex flex-1 flex-col p-5">
+        <h3 className="text-lg font-bold text-slate-900">{expert.name}</h3>
+        {expert.credentials?.trim() ? (
+          <p className="mt-1 text-sm font-semibold text-slate-800">{expert.credentials}</p>
+        ) : null}
+        {expert.primary_focus?.trim() ? (
+          <p className="mt-3 text-sm leading-relaxed text-slate-600">{expert.primary_focus}</p>
+        ) : null}
+        {expert.scientific_hook?.trim() ? (
+          <p className="mt-3 text-sm italic leading-relaxed text-slate-500">{expert.scientific_hook}</p>
+        ) : null}
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-5 inline-flex w-full justify-center rounded-lg bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+        >
+          Watch on YouTube
+        </a>
+      </div>
+    </article>
   )
 }

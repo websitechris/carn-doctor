@@ -96,8 +96,11 @@ export async function getExpertsByState(stateCode: string): Promise<Expert[]> {
   return (data ?? []) as Expert[]
 }
 
-/** National / YouTube-focused experts (no state assignment). */
-export async function getYouTubeExperts(): Promise<Expert[]> {
+/**
+ * Homepage & national roster: experts with no state assignment
+ * (YouTube / nationwide voices only).
+ */
+export async function getExperts(): Promise<Expert[]> {
   const { data, error } = await supabase
     .from('experts')
     .select('*')
@@ -108,6 +111,11 @@ export async function getYouTubeExperts(): Promise<Expert[]> {
 
   if (error) throw error
   return (data ?? []) as Expert[]
+}
+
+/** National / YouTube-focused experts (no state assignment). */
+export async function getYouTubeExperts(): Promise<Expert[]> {
+  return getExperts()
 }
 
 export async function getArticleBySlug(slug: string): Promise<Article | null> {

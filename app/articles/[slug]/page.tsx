@@ -2,21 +2,11 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getArticleBySlug, getDirectorySlugFromStateCode } from '@/lib/api'
+import { formatArticleDate } from '@/lib/format-date'
 
 export const dynamic = 'force-dynamic'
 
 type PageProps = { params: Promise<{ slug: string }> }
-
-function formatDate(iso: string | null | undefined): string {
-  if (!iso) return ''
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return ''
-  return d.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
-}
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params
@@ -78,7 +68,9 @@ export default async function ArticlePage({ params }: PageProps) {
                 {article.title}
               </h1>
               {article.published_at ? (
-                <p className="mt-3 text-sm text-slate-500">{formatDate(article.published_at)}</p>
+                <p className="mt-3 text-sm text-slate-500">
+                  {formatArticleDate(article.published_at, 'long')}
+                </p>
               ) : null}
               {article.meta_description?.trim() ? (
                 <p className="mt-6 text-lg font-medium leading-relaxed text-slate-600">

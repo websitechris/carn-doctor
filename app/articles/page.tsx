@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { getArticlesByCategory, getPublishedArticlesForSite } from '@/lib/api'
+import { formatArticleDate } from '@/lib/format-date'
 import type { Article } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
@@ -8,17 +9,6 @@ export const dynamic = 'force-dynamic'
 export const metadata: Metadata = {
   title: 'Articles | Carnivore Doctor',
   description: 'Metabolic health, clinical context, and practical guidance.',
-}
-
-function formatDate(iso: string | null | undefined): string {
-  if (!iso) return ''
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return ''
-  return d.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  })
 }
 
 function groupByCategory(articles: Article[]): Map<string, Article[]> {
@@ -88,7 +78,7 @@ export default async function ArticlesIndexPage({ searchParams }: PageProps) {
                         </p>
                       ) : null}
                       <div className="mt-4 flex items-end justify-between gap-3 border-t border-slate-100 pt-4">
-                        <time className="text-xs text-slate-500">{formatDate(article.published_at)}</time>
+                        <time className="text-xs text-slate-500">{formatArticleDate(article.published_at)}</time>
                         <Link
                           href={`/articles/${article.slug}`}
                           className="shrink-0 text-sm font-semibold text-blue-600 hover:text-blue-700"

@@ -85,3 +85,17 @@ export async function getExpertsByState(stateCode: string): Promise<Expert[]> {
   if (error) throw error
   return (data ?? []) as Expert[]
 }
+
+/** National / YouTube-focused experts (no state assignment). */
+export async function getYouTubeExperts(): Promise<Expert[]> {
+  const { data, error } = await supabase
+    .from('experts')
+    .select('*')
+    .is('state_code', null)
+    .eq('site_id', 'carnivore')
+    .order('tier', { ascending: true })
+    .order('name', { ascending: true })
+
+  if (error) throw error
+  return (data ?? []) as Expert[]
+}

@@ -10,6 +10,8 @@ type Props = {
   stateName: string
 }
 
+type ServiceFilter = 'all' | 'inperson' | 'telehealth'
+
 function flagTokens(flags: string | null | undefined): string[] {
   if (!flags?.trim()) return []
   return flags
@@ -26,13 +28,25 @@ function uniqueFlags(practitioners: Expert[]): string[] {
   return Array.from(set).sort((a, b) => a.localeCompare(b))
 }
 
+function uniqueCities(practitioners: Expert[]): string[] {
+  const set = new Set<string>()
+  for (const p of practitioners) {
+    const c = p.city?.trim()
+    if (c) set.add(c)
+  }
+  return Array.from(set).sort((a, b) => a.localeCompare(b))
+}
+
 export function PractitionerDirectory({ practitioners, stateName }: Props) {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedTier, setSelectedTier] = useState<string>('all')
   const [selectedFlag, setSelectedFlag] = useState<string>('all')
+  const [selectedCity, setSelectedCity] = useState<string>('all')
+  const [serviceFilter, setServiceFilter] = useState<ServiceFilter>('all')
   const [modalExpert, setModalExpert] = useState<Expert | null>(null)
 
   const flagOptions = useMemo(() => uniqueFlags(practitioners), [practitioners])
+  const cityOptions = useMemo(() => uniqueCities(practitioners), [practitioners])
 
   const filtered = useMemo(() => {
     const q = searchTerm.trim().toLowerCase()
@@ -45,6 +59,12 @@ export function PractitionerDirectory({ practitioners, stateName }: Props) {
         const tokens = flagTokens(p.flags)
         if (!tokens.some((t) => t.toLowerCase() === selectedFlag.toLowerCase())) return false
       }
+      if (selectedCity !== 'all') {
+        const city = p.city?.trim() ?? ''
+        if (city !== selectedCity) return false
+      }
+      if (serviceFilter === 'telehealth' && p.is_telehealth !== true) return false
+      if (serviceFilter === 'inperson' && p.is_telehealth === true) return false
       if (!q) return true
       const hay = [
         p.name,
@@ -59,15 +79,13 @@ export function PractitionerDirectory({ practitioners, stateName }: Props) {
         .toLowerCase()
       return hay.includes(q)
     })
-  }, [practitioners, searchTerm, selectedTier, selectedFlag])
+  }, [practitioners, searchTerm, selectedTier, selectedFlag, selectedCity, serviceFilter])
 
   const y = practitioners.length
 
   return (
-    <section className="mt-12">
-      <h2 className="text-2xl font-bold text-slate-800">
-        Verified Practitioners in {stateName}
-      </h2>
+    <section>
+      <h2 className="text-2xl font-bold text-slate-800">Verified Practitioners in {stateName}</h2>
 
       {y === 0 ? (
         <p className="mt-6 rounded-lg border border-amber-100 bg-amber-50/80 p-6 text-center text-slate-700 shadow-sm">
@@ -75,45 +93,98 @@ export function PractitionerDirectory({ practitioners, stateName }: Props) {
         </p>
       ) : (
         <>
-          <div className="mt-6 flex flex-col gap-4 md:flex-row md:flex-wrap md:items-end">
-            <label className="flex min-w-[200px] flex-1 flex-col gap-1 text-sm font-medium text-slate-700">
-              Search
-              <input
-                type="search"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Name, practice, city…"
-                className="rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
-              />
-            </label>
-            <label className="flex min-w-[160px] flex-col gap-1 text-sm font-medium text-slate-700">
-              Tier
-              <select
-                value={selectedTier}
-                onChange={(e) => setSelectedTier(e.target.value)}
-                className="rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-800 shadow-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
-              >
-                <option value="all">All tiers</option>
-                <option value="1">Tier 1</option>
-                <option value="2">Tier 2</option>
-                <option value="3">Tier 3</option>
-              </select>
-            </label>
-            <label className="flex min-w-[180px] flex-col gap-1 text-sm font-medium text-slate-700">
-              Flag
-              <select
-                value={selectedFlag}
-                onChange={(e) => setSelectedFlag(e.target.value)}
-                className="rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-800 shadow-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
-              >
-                <option value="all">All flags</option>
-                {flagOptions.map((f) => (
-                  <option key={f} value={f}>
-                    {f}
-                  </option>
-                ))}
-              </select>
-            </label>
+          <div className="mt-6 flex flex-col gap-4">
+            <div className="flex flex-col gap-4 md:flex-row md:flex-wrap md:items-end">
+              <label className="flex min-w-[200px] flex-1 flex-col gap-1 text-sm font-medium text-slate-700">
+                Search
+                <input
+                  type="search"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Name, practice, city…"
+                  className="rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                />
+              </label>
+              <label className="flex min-w-[160px] flex-col gap-1 text-sm font-medium text-slate-700">
+                City / region
+                <select
+                  value={selectedCity}
+                  onChange={(e) => setSelectedCity(e.target.value)}
+                  className="rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-800 shadow-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                >
+                  <option value="all">All cities</option>
+                  {cityOptions.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex min-w-[160px] flex-col gap-1 text-sm font-medium text-slate-700">
+                Tier
+                <select
+                  value={selectedTier}
+                  onChange={(e) => setSelectedTier(e.target.value)}
+                  className="rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-800 shadow-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                >
+                  <option value="all">All tiers</option>
+                  <option value="1">Tier 1</option>
+                  <option value="2">Tier 2</option>
+                  <option value="3">Tier 3</option>
+                </select>
+              </label>
+              <label className="flex min-w-[180px] flex-col gap-1 text-sm font-medium text-slate-700">
+                Flag
+                <select
+                  value={selectedFlag}
+                  onChange={(e) => setSelectedFlag(e.target.value)}
+                  className="rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-800 shadow-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                >
+                  <option value="all">All flags</option>
+                  {flagOptions.map((f) => (
+                    <option key={f} value={f}>
+                      {f}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <fieldset className="rounded-lg border border-slate-100 bg-white p-4 shadow-sm">
+              <legend className="px-1 text-sm font-medium text-slate-700">Service type</legend>
+              <div className="mt-2 flex flex-wrap gap-4">
+                <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+                  <input
+                    type="radio"
+                    name="service"
+                    checked={serviceFilter === 'all'}
+                    onChange={() => setServiceFilter('all')}
+                    className="border-slate-300 text-blue-600 focus:ring-blue-600"
+                  />
+                  All
+                </label>
+                <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+                  <input
+                    type="radio"
+                    name="service"
+                    checked={serviceFilter === 'inperson'}
+                    onChange={() => setServiceFilter('inperson')}
+                    className="border-slate-300 text-blue-600 focus:ring-blue-600"
+                  />
+                  In-Person
+                </label>
+                <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+                  <input
+                    type="radio"
+                    name="service"
+                    checked={serviceFilter === 'telehealth'}
+                    onChange={() => setServiceFilter('telehealth')}
+                    className="border-slate-300 text-blue-600 focus:ring-blue-600"
+                  />
+                  Telehealth
+                </label>
+              </div>
+            </fieldset>
           </div>
 
           <p className="mt-4 text-sm text-slate-600">

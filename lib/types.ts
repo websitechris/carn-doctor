@@ -19,6 +19,7 @@ export interface Expert {
   alignment_score?: number | null
   is_practicing?: boolean | null
   primary_focus?: string | null
+  category?: string | null
   flags?: string | null
   phone?: string | null
   evidence_summary?: string | null
@@ -33,7 +34,6 @@ export interface Expert {
   latitude?: number | null
   longitude?: number | null
   site_id?: string | null
-  expert_categories?: Array<{
-    categories: { name: string; slug: string }
-  }>
+  youtube_id?: string | null
+  scientific_hook?: string | null
 }

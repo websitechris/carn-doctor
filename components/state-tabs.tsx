@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import type { Expert, StateContent } from '@/lib/types'
+import type { Article, Expert, StateContent } from '@/lib/types'
 import { PractitionerDirectory } from '@/components/practitioner-directory'
 import { StateOverviewPanel } from '@/components/state-overview-panel'
 import { StateInsightsPanel } from '@/components/state-insights-panel'
@@ -22,9 +22,10 @@ type Props = {
   stateContent: StateContent
   practitioners: Expert[]
   nationalExperts: Expert[]
+  stateArticles: Article[]
 }
 
-export function StateTabs({ stateContent, practitioners, nationalExperts }: Props) {
+export function StateTabs({ stateContent, practitioners, nationalExperts, stateArticles }: Props) {
   const [active, setActive] = useState<StateTabId>('overview')
 
   return (
@@ -62,7 +63,11 @@ export function StateTabs({ stateContent, practitioners, nationalExperts }: Prop
           <PractitionerDirectory practitioners={practitioners} stateName={stateContent.state_name} />
         )}
         {active === 'insights' && (
-          <StateInsightsPanel stateName={stateContent.state_name} practitioners={practitioners} />
+          <StateInsightsPanel
+            stateName={stateContent.state_name}
+            practitioners={practitioners}
+            stateArticles={stateArticles}
+          />
         )}
         {active === 'national' && <NationalExpertsPanel experts={nationalExperts} />}
         {active === 'tests' && <TestsGuidancePanel />}

@@ -1,6 +1,12 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getExpertsByState, getStateCodeFromSlug, getStateContent, getYouTubeExperts } from '@/lib/api'
+import {
+  getArticlesByState,
+  getExpertsByState,
+  getStateCodeFromSlug,
+  getStateContent,
+  getYouTubeExperts,
+} from '@/lib/api'
 import { StateTabs } from '@/components/state-tabs'
 
 export const dynamic = 'force-dynamic'
@@ -26,9 +32,10 @@ export default async function StateDirectoryPage({ params }: PageProps) {
   const stateCode = getStateCodeFromSlug(slug)
   if (!stateCode) notFound()
 
-  const [practitioners, nationalExperts] = await Promise.all([
+  const [practitioners, nationalExperts, stateArticles] = await Promise.all([
     getExpertsByState(stateCode),
     getYouTubeExperts(),
+    getArticlesByState(stateCode),
   ])
 
   return (
@@ -47,6 +54,7 @@ export default async function StateDirectoryPage({ params }: PageProps) {
           stateContent={stateContent}
           practitioners={practitioners}
           nationalExperts={nationalExperts}
+          stateArticles={stateArticles}
         />
       </div>
     </main>

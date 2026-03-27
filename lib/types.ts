@@ -10,6 +10,27 @@ export interface StateContent {
   meta_description: string | null
 }
 
+export interface Article {
+  id: string
+  site_id: string | null
+  state_code: string | null
+  slug: string
+  title: string
+  meta_description: string | null
+  content: string | null
+  excerpt: string | null
+  category: string | null
+  published: boolean | null
+  published_at: string | null
+}
+
+export interface ClinicalTest {
+  id: string
+  name?: string | null
+  description?: string | null
+  [key: string]: unknown
+}
+
 export interface Expert {
   id: string
   name: string

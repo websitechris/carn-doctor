@@ -1,8 +1,11 @@
+import type { Article } from '@/lib/types'
 import type { Expert } from '@/lib/types'
+import Link from 'next/link'
 
 type Props = {
   stateName: string
   practitioners: Expert[]
+  stateArticles: Article[]
 }
 
 function tierCounts(ps: Expert[]) {
@@ -36,6 +39,11 @@ function telehealthSplit(ps: Expert[]) {
     if (p.is_telehealth === true) tele++
   }
   return { tele, inPerson: ps.length - tele }
+}
+
+function findArticleByTrendCategory(articles: Article[], trendCategory: string): Article | undefined {
+  const key = trendCategory.toLowerCase()
+  return articles.find((a) => (a.category ?? '').toLowerCase() === key)
 }
 
 function HorizontalBarChart({
@@ -122,7 +130,6 @@ function TelehealthDonut({ tele, inPerson }: { tele: number; inPerson: number })
   const start = -Math.PI / 2
   const a1 = telePct * tau
   const a2 = (1 - telePct) * tau
-  /** SVG arcs cannot reliably sweep a full 360°; nudge so the ring always draws. */
   const fullRing = tau - 1e-4
   const pathTele =
     tele === total
@@ -160,30 +167,34 @@ function TelehealthDonut({ tele, inPerson }: { tele: number; inPerson: number })
   )
 }
 
-const TRENDS: { title: string; body: string }[] = [
+const TRENDS: { title: string; body: string; articleCategory: string }[] = [
   {
     title: 'The Rise of Obesity Medicine (ABOM)',
+    articleCategory: 'abom',
     body:
       'Board-certified obesity medicine physicians are increasingly comfortable with carbohydrate restriction as a therapeutic lever. Many integrate continuous glucose monitoring, body-composition assessment, and medication deprescribing—skills that overlap with metabolic and carnivore-adjacent care even when marketing language stays conservative.',
   },
   {
     title: 'Direct Primary Care: The Time Advantage',
+    articleCategory: 'dpc',
     body:
       'DPC practices often offer longer visits and subscription-based access, which makes nuanced nutrition counselling feasible. Without fee-for-service time pressure, clinicians can document goals, follow labs over time, and adjust plans based on patient response rather than one-size-fits-all guidelines.',
   },
   {
     title: 'Functional Medicine: Medical vs Chiropractic',
+    articleCategory: 'functional',
     body:
       '“Functional medicine” appears across credentialed medical doctors, DOs, NPs, and chiropractic-led clinics. Legitimate metabolic work can emerge from any setting, but training depth and prescribing scope differ. Patients should verify who interprets labs, who orders imaging, and how emergencies are triaged—regardless of clinic sign.',
   },
   {
     title: 'Telehealth: Equalising Rural Access',
+    articleCategory: 'telehealth',
     body:
       'Virtual visits expand access where local specialists are scarce. Licensing rules still vary by state; some clinicians offer education-only or coaching models where prescribing is limited. National directories increasingly list telehealth-friendly providers alongside in-person practices for the same reason.',
   },
 ]
 
-export function StateInsightsPanel({ stateName, practitioners }: Props) {
+export function StateInsightsPanel({ stateName, practitioners, stateArticles }: Props) {
   const { t1, t2, t3 } = tierCounts(practitioners)
   const cats = categoryCounts(practitioners)
   const { tele, inPerson } = telehealthSplit(practitioners)
@@ -226,22 +237,35 @@ export function StateInsightsPanel({ stateName, practitioners }: Props) {
       <div>
         <h3 className="text-lg font-semibold text-slate-800">Key Trends</h3>
         <div className="mt-4 space-y-3">
-          {TRENDS.map((item) => (
-            <details
-              key={item.title}
-              className="rounded-lg border border-slate-100 border-l-4 border-l-blue-600 bg-white shadow-sm"
-            >
-              <summary className="cursor-pointer list-none px-5 py-4 font-medium text-slate-800 [&::-webkit-details-marker]:hidden">
-                <span className="flex items-center justify-between gap-2">
-                  {item.title}
-                  <span className="text-sm font-normal text-slate-400">▼</span>
-                </span>
-              </summary>
-              <p className="border-t border-slate-100 px-5 pb-5 pt-3 text-sm leading-relaxed text-slate-600">
-                {item.body}
-              </p>
-            </details>
-          ))}
+          {TRENDS.map((item) => {
+            const linked = findArticleByTrendCategory(stateArticles, item.articleCategory)
+            return (
+              <details
+                key={item.title}
+                className="rounded-lg border border-slate-100 border-l-4 border-l-blue-600 bg-white shadow-sm"
+              >
+                <summary className="cursor-pointer list-none px-5 py-4 font-medium text-slate-800 [&::-webkit-details-marker]:hidden">
+                  <span className="flex items-center justify-between gap-2">
+                    {item.title}
+                    <span className="text-sm font-normal text-slate-400">▼</span>
+                  </span>
+                </summary>
+                <div className="border-t border-slate-100 px-5 pb-5 pt-3">
+                  <p className="text-sm leading-relaxed text-slate-600">{item.body}</p>
+                  {linked ? (
+                    <p className="mt-4">
+                      <Link
+                        href={`/articles/${linked.slug}`}
+                        className="text-sm font-semibold text-blue-600 hover:text-blue-700"
+                      >
+                        Read full article →
+                      </Link>
+                    </p>
+                  ) : null}
+                </div>
+              </details>
+            )
+          })}
         </div>
       </div>
     </div>

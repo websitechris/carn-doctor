@@ -22,13 +22,13 @@ function tierCounts(ps: Expert[]) {
 }
 
 function categoryCounts(ps: Expert[]): { name: string; count: number }[] {
-  const m = new Map<string, number>()
-  for (const p of ps) {
-    const c = p.category?.trim()
-    if (!c) continue
-    m.set(c, (m.get(c) ?? 0) + 1)
-  }
-  return [...m.entries()]
+  const counts = ps.reduce<Record<string, number>>((acc, e) => {
+    const cat = e.category?.trim() || 'Other'
+    acc[cat] = (acc[cat] || 0) + 1
+    return acc
+  }, {})
+
+  return Object.entries(counts)
     .map(([name, count]) => ({ name, count }))
     .sort((a, b) => b.count - a.count)
 }

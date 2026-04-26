@@ -2,18 +2,14 @@ import Link from 'next/link'
 import { getExperts } from '@/lib/api'
 import type { Expert } from '@/lib/types'
 import { isLikelyYouTubeVideoId, resolveYoutubeHref, youtubeThumbnailUrl } from '@/lib/youtube'
-
-const STATE_DIRECTORIES_META = [
-  {
-    slug: 'alabama',
-    name: 'Alabama',
-    practitionerLabel: '56 verified practitioners',
-    available: true,
-  },
-] as const
+import { supabase } from '@/lib/supabase'
 
 export default async function Home() {
   const experts = await getExperts()
+  const { data: stateList } = await supabase
+    .from('state_directory_content')
+    .select('state_slug, state_name')
+    .order('state_name', { ascending: true })
 
   return (
     <main className="min-h-screen">
@@ -68,30 +64,21 @@ export default async function Home() {
         <div className="mx-auto max-w-6xl">
           <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">Browse by State</h2>
           <p className="mt-2 max-w-2xl text-slate-600">
-            We publish full state guides where content is ready. Alabama is live; more states are on the way.
+            Metabolic health practitioner directories for all 50 states and Washington DC.
           </p>
           <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {STATE_DIRECTORIES_META.map((s) => (
+            {(stateList ?? []).map((s) => (
               <article
-                key={s.slug}
-                className={`flex flex-col rounded-xl border bg-white p-6 shadow-sm ${
-                  s.available
-                    ? 'border-slate-200 transition hover:border-blue-200 hover:shadow-md'
-                    : 'border-dashed border-slate-200 opacity-70'
-                }`}
+                key={s.state_slug}
+                className="flex flex-col rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-blue-200 hover:shadow-md"
               >
-                <h3 className="text-2xl font-bold text-slate-900">{s.name}</h3>
-                <p className="mt-2 text-sm text-slate-600">{s.practitionerLabel}</p>
-                {s.available ? (
-                  <Link
-                    href={`/directory/${s.slug}`}
-                    className="mt-6 inline-flex text-sm font-semibold text-blue-600 hover:text-blue-700"
-                  >
-                    View Directory →
-                  </Link>
-                ) : (
-                  <p className="mt-6 text-sm font-medium text-slate-400">Coming soon</p>
-                )}
+                <h3 className="text-2xl font-bold text-slate-900">{s.state_name}</h3>
+                <Link
+                  href={`/directory/${s.state_slug}`}
+                  className="mt-6 inline-flex text-sm font-semibold text-blue-600 hover:text-blue-700"
+                >
+                  View Directory →
+                </Link>
               </article>
             ))}
           </div>

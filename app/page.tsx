@@ -6,6 +6,11 @@ import { supabase } from '@/lib/supabase'
 
 export default async function Home() {
   const experts = await getExperts()
+  const { count } = await supabase
+    .from('experts')
+    .select('*', { count: 'exact', head: true })
+    .eq('site_id', 'carnivore')
+    .not('state_code', 'is', null)
   const { data: stateList } = await supabase
     .from('state_directory_content')
     .select('state_slug, state_name')
@@ -25,7 +30,7 @@ export default async function Home() {
           </p>
           <div className="mt-10 flex flex-col items-stretch justify-center gap-4 sm:flex-row sm:items-center">
             <Link
-              href="/directory/alabama"
+              href="#states"
               className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-6 py-3.5 text-base font-semibold text-white shadow-lg shadow-blue-900/30 transition hover:bg-blue-500"
             >
               Find a Doctor in Your State →
@@ -47,7 +52,7 @@ export default async function Home() {
           <span className="mx-2 text-slate-600" aria-hidden="true">
             ·
           </span>
-          <span>56+ Alabama Practitioners</span>
+          <span>{count?.toLocaleString()}+ Practitioners</span>
           <span className="mx-2 text-slate-600" aria-hidden="true">
             ·
           </span>
@@ -60,7 +65,7 @@ export default async function Home() {
       </div>
 
       {/* Browse by state */}
-      <section className="bg-slate-50 px-4 py-14 sm:px-6 lg:px-8">
+      <section id="states" className="bg-slate-50 px-4 py-14 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">Browse by State</h2>
           <p className="mt-2 max-w-2xl text-slate-600">

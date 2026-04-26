@@ -19,13 +19,14 @@ const TABS = [
 export type StateTabId = (typeof TABS)[number]['id']
 
 type Props = {
-  stateContent: StateContent
+  stateContent: StateContent | null
+  stateName: string
   practitioners: Expert[]
   nationalExperts: Expert[]
   stateArticles: Article[]
 }
 
-export function StateTabs({ stateContent, practitioners, nationalExperts, stateArticles }: Props) {
+export function StateTabs({ stateContent, stateName, practitioners, nationalExperts, stateArticles }: Props) {
   const [active, setActive] = useState<StateTabId>('overview')
 
   return (
@@ -57,14 +58,14 @@ export function StateTabs({ stateContent, practitioners, nationalExperts, stateA
 
       <div className="pt-8">
         {active === 'overview' && (
-          <StateOverviewPanel stateContent={stateContent} practitioners={practitioners} />
+          <StateOverviewPanel stateContent={stateContent} stateName={stateName} practitioners={practitioners} />
         )}
         {active === 'directory' && (
-          <PractitionerDirectory practitioners={practitioners} stateName={stateContent.state_name} />
+          <PractitionerDirectory practitioners={practitioners} stateName={stateName} />
         )}
         {active === 'insights' && (
           <StateInsightsPanel
-            stateName={stateContent.state_name}
+            stateName={stateName}
             practitioners={practitioners}
             stateArticles={stateArticles}
           />

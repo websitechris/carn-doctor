@@ -1,12 +1,12 @@
 import type { Expert, StateContent } from '@/lib/types'
-import { ResearchAccordion } from '@/components/research-accordion'
 
 type Props = {
-  stateContent: StateContent
+  stateContent: StateContent | null
+  stateName: string
   practitioners: Expert[]
 }
 
-export function StateOverviewPanel({ stateContent, practitioners }: Props) {
+export function StateOverviewPanel({ stateContent, stateName, practitioners }: Props) {
   const total = practitioners.length
   const tier1 = practitioners.filter((p) => p.tier === 1).length
   const tele = practitioners.filter((p) => p.is_telehealth === true).length
@@ -22,34 +22,32 @@ export function StateOverviewPanel({ stateContent, practitioners }: Props) {
         approaches that align with animal-based nutrition.
       </div>
 
-      <section className="rounded-lg border border-slate-100 border-l-4 border-l-blue-600 bg-white p-6 shadow-sm">
-        <h2 className="text-xl font-semibold text-slate-800">
-          Why Doctors Don&apos;t Advertise Carnivore or Keto Approaches
-        </h2>
-        <div className="mt-4 space-y-3 text-sm leading-relaxed text-slate-600">
-          <p>
-            Medical boards and institutional protocols emphasise guideline-concordant messaging. Discussing
-            carnivore or strict ketogenic therapy publicly can create perceived liability, peer scrutiny, or
-            conflicts with employment policies—even when patients report benefit.
-          </p>
-          <p>
-            Randomised trial evidence for long-term carnivore outcomes remains thin in mainstream literature,
-            which makes many clinicians cautious about endorsement language even if they use carbohydrate
-            restriction in practice.
-          </p>
-          <p>
-            <strong className="text-slate-800">
-              Many practitioners still support these approaches privately:
-            </strong>{' '}
-            longer visits, shared decision-making, and metabolic markers often tell a different story than
-            public-facing websites. This directory highlights clinicians comfortable with therapeutic carb
-            restriction and metabolic framing that aligns with animal-based nutrition—without requiring
-            headline &quot;carnivore&quot; claims.
-          </p>
+      {stateContent ? (
+        <div className="space-y-8 prose max-w-none">
+          <section>
+            <h2>Metabolic Health in {stateName}</h2>
+            <p>{stateContent.executive_summary}</p>
+          </section>
+          <section>
+            <h2>Academic &amp; Hospital Programmes</h2>
+            <p>{stateContent.academic_vanguard}</p>
+          </section>
+          <section>
+            <h2>Private &amp; Specialist Clinics</h2>
+            <p>{stateContent.private_sector_analysis}</p>
+          </section>
+          <section>
+            <h2>Functional &amp; Integrative Medicine</h2>
+            <p>{stateContent.functional_landscape}</p>
+          </section>
+          <section>
+            <h2>Direct Primary Care &amp; Telehealth</h2>
+            <p>{stateContent.dpc_revolution}</p>
+          </section>
         </div>
-      </section>
-
-      <ResearchAccordion stateContent={stateContent} />
+      ) : (
+        <p>Content coming soon for this state.</p>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-lg border border-slate-100 bg-white p-5 text-center shadow-sm">

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { slugifyTitle } from '@/lib/slug'
 import type { Article, ClinicalTest, Expert } from '@/lib/types'
+import { saveArticleAction } from './actions'
 
 type AdminTab = 'experts' | 'tests' | 'articles'
 
@@ -176,30 +177,26 @@ export default function AdminPage() {
       return
     }
 
-    const publishedAt =
-      published ? (storedPublishedAt || new Date().toISOString()) : null
-
-    const row = {
-      site_id: 'carnivore' as const,
-      slug: s,
-      title: t,
-      meta_description: metaDescription.trim() || null,
-      excerpt: excerpt.trim() || null,
-      content: content.trim() || null,
-      category: category.trim() || null,
-      state_code: stateCode.trim() || null,
-      published,
-      published_at: publishedAt,
-    }
-
     try {
-      if (editingArticleId) {
-        const { error } = await supabase.from('articles').update(row).eq('id', editingArticleId)
-        if (error) throw error
+      const result = await saveArticleAction({
+        id: editingArticleId,
+        slug,
+        title,
+        metaDescription,
+        excerpt,
+        content,
+        category,
+        stateCode,
+        published,
+        storedPublishedAt,
+      })
+      if (!result.ok) {
+        setMessage({ kind: 'err', text: result.error })
+        return
+      }
+      if (result.mode === 'updated') {
         setMessage({ kind: 'ok', text: 'Article updated.' })
       } else {
-        const { error } = await supabase.from('articles').insert(row)
-        if (error) throw error
         setMessage({ kind: 'ok', text: 'Article created.' })
         resetArticleForm()
       }
@@ -225,8 +222,20 @@ export default function AdminPage() {
   return (
     <main className="min-h-screen bg-slate-100 text-slate-900">
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-        <h1 className="text-2xl font-bold text-slate-900">Carnivore.doctor admin</h1>
-        <p className="mt-1 text-sm text-slate-600">Manage experts, clinical tests, and articles.</p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">Carnivore.doctor admin</h1>
+            <p className="mt-1 text-sm text-slate-600">Manage experts, clinical tests, and articles.</p>
+          </div>
+          <form action="/admin/logout" method="post">
+            <button
+              type="submit"
+              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Log out
+            </button>
+          </form>
+        </div>
 
         <nav className="mt-6 flex gap-2 overflow-x-auto border-b border-slate-200 bg-white/80">
           {tabBtn('experts', 'Experts')}

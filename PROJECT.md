@@ -70,6 +70,56 @@ Blog posts (ZimmWriter output).
 
 All legacy WordPress URLs use **301 redirects** in `next.config.ts` to the new clean URLs.
 
+## Auth & Security
+
+### Admin login flow
+
+The `/admin` area is gated by a signed-cookie session.
+
+- **`proxy.ts`** — runs on every `/admin/*` request. Lets `/admin/login` and `/admin/logout` through unauthenticated; otherwise verifies the `admin_session` cookie or redirects to `/admin/login`.
+- **`lib/admin-session.ts`** — HMAC-SHA-256 signs and verifies the cookie. 30-day TTL; httpOnly; sameSite=lax; secure in production. Uses Web Crypto, no external dependencies.
+- **`app/admin/login/page.tsx`** + **`app/admin/login/actions.ts`** — password form. The `loginAction` server action does a timing-safe compare against `ADMIN_PASSWORD`, signs a session, and sets the cookie.
+- **`app/admin/logout/route.ts`** — clears the cookie and redirects.
+
+### Server-action pattern for admin writes
+
+All admin writes go through server actions. Pattern (see `app/admin/actions.ts`):
+
+1. `'use server'` directive at the top of the file.
+2. `requireAdmin()` reads the session cookie and calls `verifySession`. Throws if invalid.
+3. The handler uses `getSupabaseAdmin()` from `lib/supabase-admin.ts`, which builds a Supabase client with `SUPABASE_SERVICE_ROLE_KEY`.
+4. `lib/supabase-admin.ts` imports `'server-only'` so it cannot be accidentally bundled to the client.
+
+The service role key bypasses RLS, which is why these writes succeed against tables that anon cannot write to.
+
+### RLS model
+
+- All carnivore-schema tables have RLS enabled.
+- Anon role: SELECT-only policies (e.g. `articles` filters drafts via `published = true`).
+- No INSERT/UPDATE/DELETE policies for anon. Any non-SELECT request from the anon key returns `42501`.
+- Service role bypasses RLS. Admin writes use this key from the server only.
+- **`supabase/migrations/0001_lock_admin_writes.sql` is the source of truth for the current RLS policy state.** If the policies in Supabase ever drift from that file, re-applying it should restore them — it's idempotent (`DROP POLICY IF EXISTS`).
+
+### Don't break this
+
+- **Never** call `supabase.from(...).insert/update/delete(...)` from a client component or page. Client code uses the anon key, which is write-blocked. All mutations go through a server action that uses `getSupabaseAdmin()`.
+- **When adding a new table to the carnivore schema:**
+  1. `ALTER TABLE carnivore.<name> ENABLE ROW LEVEL SECURITY;`
+  2. Add an explicit anon `SELECT` policy if the table is publicly readable.
+  3. Do not add INSERT/UPDATE/DELETE policies for anon. Writes go through service_role.
+  4. Add a new numbered migration in `supabase/migrations/` so the policy state stays reproducible.
+- Never log or commit `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_PASSWORD`, or `ADMIN_SESSION_SECRET`.
+
+### Required environment variables
+
+| Var | Where used | Notes |
+|-----|------------|-------|
+| `NEXT_PUBLIC_SUPABASE_URL` | `lib/supabase.ts`, `lib/supabase-admin.ts` | Public — exposed to the browser. |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `lib/supabase.ts` | Public. RLS is what protects the data. |
+| `SUPABASE_SERVICE_ROLE_KEY` | `lib/supabase-admin.ts` (server only) | **Secret.** Bypasses RLS. Never expose. |
+| `ADMIN_PASSWORD` | `app/admin/login/actions.ts` | **Secret.** Single shared admin password. |
+| `ADMIN_SESSION_SECRET` | `lib/admin-session.ts` | **Secret.** HMAC key for the session cookie. Rotating this invalidates all existing sessions. |
+
 ## Content Strategy
 
 - **51 state pages** with unique, deep research content.
@@ -119,14 +169,21 @@ All legacy WordPress URLs use **301 redirects** in `next.config.ts` to the new c
 - Overview tab: stat hero row needs a visual upgrade.
 - ZimmWriter setup for article generation.
 
+## Known Issues
+
+- **`/labs` is a 404 trap.** Referenced in nav and from articles, but the page does not exist. Highest-priority fix.
+- **Homepage hardcodes "12 National Experts"** rather than counting from the `experts` table — drifts whenever the YouTube experts list changes.
+- **Alabama CTA bug on article pages.** Articles that link to the Alabama directory render an incorrect CTA. Needs investigation in the article template.
+
 ## Immediate Next Steps
 
-1. Visual upgrade to Overview tab (stat hero row).
-2. Load remaining 50 states’ content into Supabase.
-3. Set up ZimmWriter with keyword research.
-4. Generate first article batch (Alabama — 5 posts).
-5. Fix YouTube video IDs in the admin dashboard.
-6. Eventually point **carnivore.doctor** at Vercel.
+1. Build the `/labs` page (currently a 404 trap — see Known Issues).
+2. Visual upgrade to Overview tab (stat hero row).
+3. Load remaining 50 states’ content into Supabase.
+4. Set up ZimmWriter with keyword research.
+5. Generate first article batch (Alabama — 5 posts).
+6. Fix YouTube video IDs in the admin dashboard.
+7. Eventually point **carnivore.doctor** at Vercel.
 
 ## Future Features (Backlog)
 

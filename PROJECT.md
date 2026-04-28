@@ -159,8 +159,11 @@ The service role key bypasses RLS, which is why these writes succeed against tab
 - Alabama directory complete (56 practitioners, 5 tabs).
 - Homepage: hero, state grid, YouTube experts.
 - Admin dashboard (Experts, Tests, Articles).
+- Admin area locked down: cookie auth, server-action writes via service-role key, RLS migration. (See Auth & Security.)
 - Articles pipeline: table, page template, admin tab.
 - 301 redirects for all 51 WordPress state URLs.
+- `LEGACY_REDIRECTS` wired up in `next.config.ts`.
+- Holding pages for `/labs`, `/tools/fat-ratio-calculator`, `/privacy-policy`, plus a global `app/not-found.tsx`.
 - GitHub: `websitechris/carn-doctor`.
 
 ### In Progress
@@ -171,13 +174,15 @@ The service role key bypasses RLS, which is why these writes succeed against tab
 
 ## Known Issues
 
-- **`/labs` is a 404 trap.** Referenced in nav and from articles, but the page does not exist. Highest-priority fix.
 - **Homepage hardcodes "12 National Experts"** rather than counting from the `experts` table — drifts whenever the YouTube experts list changes.
-- **Alabama CTA bug on article pages.** Articles that link to the Alabama directory render an incorrect CTA. Needs investigation in the article template.
+- **Four legacy article slugs redirect to non-existent articles.** `vegetarian-carnivore-design`, `very-low-carb-vegetarian`, `human-nutritional-science`, and `great-green-delusion` are wired up in `LEGACY_REDIRECTS` but the target slugs don't exist in `carnivore.articles` yet — these currently land on the styled 404. Either write the articles or repoint the redirects.
+- **NavBar has no `/articles` link.** The articles index exists but isn't reachable from the global nav.
+- **Admin "All articles" sidebar uses the anon client.** Works because RLS allows anon SELECT, but should be a server action for consistency with the rest of the admin write-pattern.
+- **`/labs` is a holding page.** No longer a 404 trap, but needs real content built from the `clinical_tests` table.
 
 ## Immediate Next Steps
 
-1. Build the `/labs` page (currently a 404 trap — see Known Issues).
+1. Polish `/labs` into a real page using the `clinical_tests` table (currently a holding page).
 2. Visual upgrade to Overview tab (stat hero row).
 3. Load remaining 50 states’ content into Supabase.
 4. Set up ZimmWriter with keyword research.

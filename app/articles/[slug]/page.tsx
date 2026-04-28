@@ -94,10 +94,10 @@ export default async function ArticlePage({ params }: PageProps) {
                 Search verified clinicians by state and filter by tier, telehealth, and more.
               </p>
               <Link
-                href="/directory/alabama"
+                href={dirSlug ? `/directory/${dirSlug}` : '/#states'}
                 className="mt-6 inline-flex rounded-md bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700"
               >
-                Browse directory
+                {dirSlug ? 'Browse directory' : 'Browse by state →'}
               </Link>
             </div>
           </article>

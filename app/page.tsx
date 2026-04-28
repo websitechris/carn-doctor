@@ -56,7 +56,7 @@ export default async function Home() {
           <span className="mx-2 text-slate-600" aria-hidden="true">
             ·
           </span>
-          <span>12 National Experts</span>
+          <span>{experts.length} National Experts</span>
           <span className="mx-2 text-slate-600" aria-hidden="true">
             ·
           </span>

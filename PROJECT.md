@@ -156,7 +156,7 @@ The service role key bypasses RLS, which is why these writes succeed against tab
 
 - Next.js app deployed on Vercel.
 - Supabase `carnivore` schema with all four tables.
-- Alabama directory complete (56 practitioners, 5 tabs).
+- All 51 state directories live — full `state_directory_content` for every state, plus 2,085 practitioner records loaded across all states. (Data quality caveats under Known Issues.)
 - Homepage: hero, state grid, YouTube experts.
 - Admin dashboard (Experts, Tests, Articles).
 - Admin area locked down: cookie auth, server-action writes via service-role key, RLS migration. (See Auth & Security.)
@@ -174,21 +174,23 @@ The service role key bypasses RLS, which is why these writes succeed against tab
 
 ## Known Issues
 
-- **Homepage hardcodes "12 National Experts"** rather than counting from the `experts` table — drifts whenever the YouTube experts list changes.
 - **Four legacy article slugs redirect to non-existent articles.** `vegetarian-carnivore-design`, `very-low-carb-vegetarian`, `human-nutritional-science`, and `great-green-delusion` are wired up in `LEGACY_REDIRECTS` but the target slugs don't exist in `carnivore.articles` yet — these currently land on the styled 404. Either write the articles or repoint the redirects.
 - **NavBar has no `/articles` link.** The articles index exists but isn't reachable from the global nav.
 - **Admin "All articles" sidebar uses the anon client.** Works because RLS allows anon SELECT, but should be a server action for consistency with the rest of the admin write-pattern.
 - **`/labs` is a holding page.** No longer a 404 trap, but needs real content built from the `clinical_tests` table.
+- **Practitioner data is partial / messy across most states.** All 51 states have rows in the `experts` table (2,085 total), but the data came from a flawed WordPress bulk export — some URLs were truncated, some files were corrupt, some content didn't download cleanly. The fix is a clean re-export from the live WordPress site at carnivore.doctor and reimport into Supabase. Out of scope for now; tracked as a separate task.
+- **Some practitioner URLs may be fabricated.** During the early Gemini Deep Research phase, a number of practitioner records may have been generated with hallucinated websites. Needs a separate audit pass — spot-check a sample, then a systematic verification against authoritative sources before pointing carnivore.doctor at the new site.
 
 ## Immediate Next Steps
 
 1. Polish `/labs` into a real page using the `clinical_tests` table (currently a holding page).
 2. Visual upgrade to Overview tab (stat hero row).
-3. Load remaining 50 states’ content into Supabase.
-4. Set up ZimmWriter with keyword research.
-5. Generate first article batch (Alabama — 5 posts).
-6. Fix YouTube video IDs in the admin dashboard.
-7. Eventually point **carnivore.doctor** at Vercel.
+3. Set up ZimmWriter with keyword research.
+4. Generate first article batch (Alabama — 5 posts).
+5. Fix YouTube video IDs in the admin dashboard.
+6. Re-export practitioners cleanly from the live WordPress site and reimport into Supabase (see Known Issues — practitioner data quality).
+7. Audit pass on practitioner URLs to flag fabricated entries from the Gemini Deep Research phase.
+8. Eventually point **carnivore.doctor** at Vercel — gated on items 6 and 7.
 
 ## Future Features (Backlog)
 

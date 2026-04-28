@@ -28,10 +28,10 @@ export default function LabsPage() {
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link
-              href="/directory/alabama"
+              href="/#states"
               className="inline-flex rounded-md bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
             >
-              Browse a state directory
+              Browse by state →
             </Link>
             <Link
               href="/articles"
